@@ -9,12 +9,12 @@ namespace VersionOneRestSharpClient.Example
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        [Map("ScopeLabels.Name")]
-        public List<string> Programs { get; set; }
+        [Map("Workitems.Name")]
+        public List<string> Workitems { get; set; }
 
         public Scope()
         {
-            Programs = new List<string>();
+            Workitems = new List<string>();
         }
     }
 
@@ -49,9 +49,11 @@ namespace VersionOneRestSharpClient.Example
             // Create the rest client instance, which is a simple derived version of the RestSharp client:
             var client = new VersionOneRestClient(V1_REST_API_URL, USERNAME, PASSWORD);
 
+            /*------------------------*/
+
             Console.WriteLine("Approach #1 to Scope -- Completely Untyped, returns raw XML:");
             var query = new RestApiUriQueryBuilder("Scope")
-                .Select("Name", "Description", "SecurityScope.Name")
+                .Select("Name", "Description", "Workitems.Name")
                 .Filter("SecurityScope.Name", "!=", "System (All Projects)"); // excludes top level one
 
             var request = new RestRequest(query.ToString());
@@ -62,18 +64,67 @@ namespace VersionOneRestSharpClient.Example
 
             Console.WriteLine("Approach #1 to Member -- Completely Untyped, returns raw XML:");
             query = new RestApiUriQueryBuilder("Member")
-                .Id(20)
                 .Select("Name", "Nickname", "OwnedWorkitems.Name");
 
             request = new RestRequest(query.ToString());
             responseRawXml = client.Get(request);
-            Console.WriteLine(responseRawXml.Content + Environment.NewLine);            
+            Console.WriteLine(responseRawXml.Content + Environment.NewLine);
 
             /*------------------------*/
 
-            Console.WriteLine("Approach #2 to Scope -- Strongly-typed to your own custom-defined DTO type:");
+            Console.WriteLine("Approach #2 to Scope -- -- Untyped, but with dynamic to ease reading:");
+            query = new RestApiUriQueryBuilder("Scope")
+                .Select("Name", "Description", "Workitems.Name")
+                .Filter("SecurityScope.Name", "!=", "System (All Projects)"); // excludes top level one
+
+            request = new RestRequest(query.ToString());
+            var responseDynamic = client.Get<List<dynamic>>(request);
+            foreach (var result in responseDynamic.Data)
+            {
+                // Show JSON representation:
+                Console.WriteLine(result.ToString());
+
+                // Now, display items:
+                Console.WriteLine("Name:" + result.Name);
+                Console.WriteLine("Description:" + result.Description);
+                Console.WriteLine("Workitems count: " + result["Workitems.Name"].Count);
+                foreach (var item in result["Workitems.Name"])
+                {
+                    Console.WriteLine("Workitem: " + item);
+                }
+                Console.WriteLine(Environment.NewLine);
+            }
+
+            /*---*/
+
+            Console.WriteLine("Approach #2 to Member -- Untyped, but with dynamic to ease reading:");
+            query = new RestApiUriQueryBuilder("Member")
+                .Select("Name", "Nickname", "OwnedWorkitems.Name");
+            request = new RestRequest(query.ToString());
+            responseDynamic = client.Get<List<dynamic>>(request);
+            foreach (var result in responseDynamic.Data)
+            {
+                // Show JSON representation:
+                Console.WriteLine(result.ToString());
+
+                // Now, display items:
+                Console.WriteLine("Name:" + result.Name);
+                Console.WriteLine("Name:" + result.Nickname);
+                Console.WriteLine("Workitems count: " + result["OwnedWorkitems.Name"].Count);
+                foreach (var proj in result["OwnedWorkitems.Name"])
+                {
+                    Console.WriteLine("Program: " + proj);
+                }
+                Console.WriteLine(Environment.NewLine);
+            }
+
+            Console.WriteLine(responseRawXml.Content + Environment.NewLine);
+
+            /*------------------------*/
+
+            Console.WriteLine("Approach #3 to Scope -- Strongly-typed to your own custom-defined DTO type:");
             var queryTypedScope = new RestApiUriQueryBuilderTyped<Scope>()
-                .Select(m => m.Name, m => m.Description, m => m.Programs);
+                .Select(m => m.Name, m => m.Description, m => m.Workitems);
                 //.Filter("SecurityScope.Name", "!=", "System (All Projects)"); // excludes top level one
 
             request = new RestRequest(queryTypedScope.ToString());
@@ -82,17 +133,17 @@ namespace VersionOneRestSharpClient.Example
             {
                 Console.WriteLine("Name:" + result.Name);
                 Console.WriteLine("Description:" + result.Description);
-                Console.WriteLine("Programs count: " + result.Programs.Count);
-                foreach (var proj in result.Programs)
+                Console.WriteLine("Workitems count: " + result.Workitems.Count);
+                foreach (var item in result.Workitems)
                 {
-                    Console.WriteLine("Program: " + proj);
+                    Console.WriteLine("Workitem: " + item);
                 }
                 Console.WriteLine(Environment.NewLine);
             }
 
             /*---*/
 
-            Console.WriteLine("Approach #2 to Member -- Completely Untyped, returns raw XML:");
+            Console.WriteLine("Approach #3 to Member -- Strongly-typed to your own custom-defined DTO type:");
             var queryTypedMember = new RestApiUriQueryBuilderTyped<Member>()
                 .Select(m => m.Name, m => m.Nickname, m => m.Workitems);
                 //.Filter(m => m.Name, ComparisonOperator.NotEquals, "Administrator");
