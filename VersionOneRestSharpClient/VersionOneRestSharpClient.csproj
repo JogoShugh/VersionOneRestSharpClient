@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\AcccessTokenAuthenticator.cs" />
     <Compile Include="Client\AssetDeserializer.cs" />
     <Compile Include="Client\ComparisonOperator.cs" />
     <Compile Include="Client\ComparisonOperatorConstants.cs" />

@@ -9,6 +9,8 @@ namespace VersionOneRestSharpClient.Client
     {
         public readonly List<object> SelectFields = new List<object>();
         public readonly List<WhereCriterion> WhereCriteria = new List<WhereCriterion>();
+        public int PageSize = -1;
+        public int PageStart = -1;        
         private readonly string _assetType = string.Empty;
         private string _id = string.Empty;
 
@@ -73,6 +75,14 @@ namespace VersionOneRestSharpClient.Client
             return this;
         }
 
+        public RestApiUriQueryBuilder Paging(int pageSize, int pageStart = 0)
+        {
+            PageSize = pageSize;
+            PageStart = pageStart;
+
+            return this;
+        }
+
         public override string ToString()
         {
             var builder = new StringBuilder();
@@ -103,6 +113,15 @@ namespace VersionOneRestSharpClient.Client
                     query.Append("&");
                 }
                 query.Append("where=" + whereFragment);
+            }
+
+            if (PageSize != -1 && PageStart != -1)
+            {
+                if (query.Length > 0)
+                {
+                    query.Append("&");
+                }
+                query.Append(string.Format("page={0},{1}", PageSize, PageStart));
             }
 
             builder.Append("/" + _assetType);
