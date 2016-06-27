@@ -1,6 +1,7 @@
 ﻿using System;
 using RestSharp;
 using RestSharp.Validation;
+using RestSharp.Authenticators;
 
 namespace VersionOneRestSharpClient.Client
 {
@@ -35,5 +36,15 @@ namespace VersionOneRestSharpClient.Client
             Authenticator = new AcccessTokenAuthenticator(accessToken);
             AddHandler("text/xml", new AssetDeserializer());
         }
+
+		public IRestResponse Update(string oidToken, object attributes)
+		{
+			var update = new RestApiUpdatePayloadBuilder(oidToken, attributes);
+			var payload = update.Build();
+			var asset = oidToken.Replace(":", "/");
+			var req = new RestRequest(asset, Method.POST);
+			req.AddParameter("application/json", payload, ParameterType.RequestBody);
+			return this.Post(req);
+		}
     }
 }

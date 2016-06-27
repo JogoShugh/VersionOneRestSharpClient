@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VersionOneRestSharpClient.Client
 {
-    public class AcccessTokenAuthenticator : RestSharp.IAuthenticator
+    public class AcccessTokenAuthenticator : RestSharp.Authenticators.IAuthenticator
     {
         private string _accessToken { get; set; }
 
