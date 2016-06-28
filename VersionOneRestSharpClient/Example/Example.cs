@@ -14,7 +14,7 @@ namespace VersionOneRestSharpClient.Example
         private const string USERNAME = "admin";
         private const string PASSWORD = "admin";
         private const string ACCESS_TOKEN = "1.EGwVOB/NsLKeTkRRJO+OpYhuFPo="; // for use with v1sdktesting site
-        
+
         private static void Main(string[] args)
         {
             // Create the rest client instance, which is a simple derived version of the RestSharp client:
@@ -65,48 +65,48 @@ namespace VersionOneRestSharpClient.Example
         }
 
         private static void QueryWithSimpleWhere(VersionOneRestClient client)
-		{
+        {
             WriteIntro("QueryWithSimpleWhere:");
 
             var results = client.Query("Member")
-				.Select("Name", "Nickname", "OwnedWorkitems.Name")
-				.Where("Name", "Sample: Alfred Smith") // <-- Simple match
-				.Paging(10)
-				.Execute();
+                .Select("Name", "Nickname", "OwnedWorkitems.Name")
+                .Where("Name", "Sample: Alfred Smith") // <-- Simple match
+                .Paging(10)
+                .Execute();
 
-			foreach (var result in results)
-			{
+            foreach (var result in results)
+            {
                 WriteRawJson(result);
 
-				WriteLine("Name:" + result.Name);
-				WriteLine("Name:" + result.Nickname);				
+                WriteLine("Name:" + result.Name);
+                WriteLine("Name:" + result.Nickname);
 
                 if (result["OwnedWorkitems.Name"].HasValues == false) continue;
 
                 WriteLine("Workitems: " + result["OwnedWorkitems.Name"]);
                 WriteLine("Workitems count: " + result["OwnedWorkitems.Name"].Count);
-				foreach (var proj in result["OwnedWorkitems.Name"])
-				{
-					WriteLine("Program: " + proj);
-				}
-			}
-		}
+                foreach (var proj in result["OwnedWorkitems.Name"])
+                {
+                    WriteLine("Program: " + proj);
+                }
+            }
+        }
 
-		private static void QueryWithNotEqualsStringFormFilter(VersionOneRestClient client)
-		{
+        private static void QueryWithNotEqualsStringFormFilter(VersionOneRestClient client)
+        {
             WriteIntro("QueryWithNotEqualsStringFormFilter:");
 
             var results = client.Query("Scope")
-				.Select("Name", "Description", "Workitems.Name")
-				.Filter("SecurityScope.Name", "!=", "System (All Projects)") // excludes top level one
-				.Paging(5, 2)
-				.Execute();
-			foreach (var result in results)
-			{
+                .Select("Name", "Description", "Workitems.Name")
+                .Filter("SecurityScope.Name", "!=", "System (All Projects)") // excludes top level one
+                .Paging(5, 2)
+                .Execute();
+            foreach (var result in results)
+            {
                 WriteRawJson(result);
                 // Lazy!
-			}
-		}
+            }
+        }
 
         private static void QueryWithIsEqualOperatorConvenienceHelper(VersionOneRestClient client)
         {
@@ -182,16 +182,16 @@ namespace VersionOneRestSharpClient.Example
         }
 
         private static void Update(VersionOneRestClient client)
-		{
+        {
             WriteIntro("Update with an anonymous object");
 
-			var res = client.Update("Story:1083", new
-			{
-				Name = "It's a test from VersionOneRestSharpClient",
-				Description = "And this is a description from VersionOneRestSharpClient",
-				ToDo = 9.5
-			});
-		}
+            var res = client.Update("Story:1083", new
+            {
+                Name = "It's a test from VersionOneRestSharpClient",
+                Description = "And this is a description from VersionOneRestSharpClient",
+                ToDo = 9.5
+            });
+        }
     }
 
     public class Scope
