@@ -41,8 +41,7 @@ namespace VersionOneRestSharpClient.Client
 
         public IRestResponse<dynamic> Create(string assetType, object attributes)
         {
-            var create = new RestApiCreatePayloadBuilder(assetType, attributes);
-            var payload = create.Build();
+            var payload = RestApiPayloadBuilder.Build(attributes);
             var req = new RestRequest(assetType, Method.POST);
             req.AddParameter("application/json", payload, ParameterType.RequestBody);
             return this.Post<dynamic>(req);
@@ -50,8 +49,7 @@ namespace VersionOneRestSharpClient.Client
 
 		public IRestResponse<dynamic> Update(string oidToken, object attributes)
 		{
-			var update = new RestApiUpdatePayloadBuilder(oidToken, attributes);
-			var payload = update.Build();
+			var payload = RestApiPayloadBuilder.Build(attributes);
 			var asset = oidToken.Replace(":", "/");
 			var req = new RestRequest(asset, Method.POST);
 			req.AddParameter("application/json", payload, ParameterType.RequestBody);

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Xml.XPath;
 using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace VersionOneRestSharpClient.Client
 {
@@ -107,9 +108,34 @@ namespace VersionOneRestSharpClient.Client
             // Add the identity relation
             var assetNode = nav.SelectSingleNode(selectPath);
             var href = assetNode.GetAttribute("href", string.Empty);
-            var id = assetNode.GetAttribute("id", string.Empty);
-            var self = new JObject { { "href", new JValue(href) }, { "id", new JValue(id) } };
+            var oidTokenFull = assetNode.GetAttribute("id", string.Empty);
+
+            var self = new JObject {
+                { "href", new JValue(href) },
+                { "oidTokenFull", new JValue(oidTokenFull) },
+                { "oidToken", new JValue(GetMomentlessOidToken(oidTokenFull)) },
+                { "assetType", new JValue(GetAssetTypeFromOidToken(oidTokenFull)) },
+                { "id", new JValue(GetIdFromOidToken(oidTokenFull)) }
+            };
             relations.Add("self", self);
+        }
+
+        private static string GetMomentlessOidToken(string oidTokenFull)
+        {
+            var parts = oidTokenFull.Split(':').Take(2).ToArray();
+            return parts[0] + ":" + parts[1];
+        }
+
+        private static string GetAssetTypeFromOidToken(string oidTokenFull)
+        {
+            var parts = oidTokenFull.Split(':').Take(2).ToArray();
+            return parts[0];
+        }
+
+        private static int GetIdFromOidToken(string oidTokenFull)
+        {
+            var parts = oidTokenFull.Split(':').Take(2).ToArray();
+            return int.Parse(parts[1]);
         }
 
         private static void AddRelationships(XPathNavigator nav, string selectPath, JObject propertyContainer, JObject relations)

@@ -4,6 +4,7 @@ using RestSharp;
 using VersionOneRestSharpClient.Client;
 using static System.Console;
 using static VersionOneRestSharpClient.Client.ComparisonOperator;
+using static VersionOneRestSharpClient.Client.ClientUtilities;
 
 namespace VersionOneRestSharpClient.Example
 {
@@ -59,9 +60,52 @@ namespace VersionOneRestSharpClient.Example
             {
                 Name = "Testing the client.Create method at " + DateTime.Now.ToLongTimeString(),
                 Description = "Just playing around...",
-                Scope = "Scope:1022"
+                Scope = "Scope:86271",
+                //Owners = Relations(Add("Member:86309"), Remove("Member:20"))
+                //Owners = Relations(Add("Member", 86309), Remove("Member", 20))
+                // Other options:
+                // Owners = Add("Member:20")
+                // Owners = Relation("Member:20")
+                // Owners = Relation(Add("Member:20"))
+                Owners = Add("Member", 86309)
+                // Owners = Remove("Member", 86309)
+                // Or, the old school by hand way:
+                /*
+                Owners = new[]
+                {
+                    new { idref = "Member:20", act = "add" },
+                    new { idref = "Member:86309", act = "add" }
+                }
+                */
             });
-            WriteLine(res.Data);
+
+            var oidToken = res.Data[0]._links.self.oidToken.ToString();
+
+            res = client.Create("Task", new
+            {
+                Name = "My Task 1",
+                Parent = oidToken
+            });
+            WriteLine(res.Data[0]._links.self.oidToken);
+
+            res = client.Create("Task", new
+            {
+                Name = "My Task 2",
+                Parent = oidToken
+            });
+            WriteLine(res.Data[0]._links.self.oidToken);
+
+            var results = client.Query("Story")
+                .Select("Children:Task")
+                .Where("ID", oidToken)
+                .Execute();
+            WriteLine(results);
+
+            // Remove
+            res = client.Update(oidToken, new
+            {
+                Owners = Remove("Member:20")
+            });
         }
 
         private static void QueryWithSimpleWhere(VersionOneRestClient client)
@@ -69,10 +113,12 @@ namespace VersionOneRestSharpClient.Example
             WriteIntro("QueryWithSimpleWhere:");
 
             var results = client.Query("Member")
-                .Select("Name", "Nickname", "OwnedWorkitems.Name")
+                //.Select("Name", "Nickname", "OwnedWorkitems.Name")
                 .Where("Name", "Sample: Alfred Smith") // <-- Simple match
                 .Paging(10)
                 .Execute();
+
+            WriteLine(results.ToString());
 
             foreach (var result in results)
             {
