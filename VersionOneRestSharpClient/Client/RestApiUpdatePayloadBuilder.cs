@@ -1,16 +1,11 @@
 ﻿using Newtonsoft.Json.Linq;
-using RestSharp;
 using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
 using System.Linq;
 
 namespace VersionOneRestSharpClient.Client
 {
 	public class RestApiUpdatePayloadBuilder
 	{
-		//public readonly List<object> UpdateFields = new List<object>();
 		private readonly string _oidToken = string.Empty;
 		private readonly object _attributes = new { };
 

@@ -10,9 +10,10 @@ namespace VersionOneRestSharpClient.Client
         public readonly List<object> SelectFields = new List<object>();
         public readonly List<WhereCriterion> WhereCriteria = new List<WhereCriterion>();
         public int PageSize = -1;
-        public int PageStart = -1;        
+        public int PageStart = -1;
         private readonly string _assetType = string.Empty;
         private string _id = string.Empty;
+        private Func<string, IList<dynamic>> _executor = null;
 
         public RestApiUriQueryBuilder(string assetType)
         {
@@ -21,6 +22,15 @@ namespace VersionOneRestSharpClient.Client
                 throw new ArgumentNullException("assetType");
             }
             _assetType = assetType;
+        }
+
+        public RestApiUriQueryBuilder(string assetType, Func<string, IList<dynamic>> executor) : this(assetType)
+        {
+            if (executor == null)
+            {
+                throw new ArgumentNullException("executor");
+            }
+            _executor = executor;
         }
 
         public RestApiUriQueryBuilder Id(object id)
@@ -49,7 +59,7 @@ namespace VersionOneRestSharpClient.Client
             WhereCriteria.Add(new WhereCriterion
             {
                 AttributeName = attributeName,
-                Operator = ComparisonOperator.Equals,
+                Operator = ComparisonOperator.IsEqual,
                 MatchValue = matchValue
             });
 
@@ -138,13 +148,26 @@ namespace VersionOneRestSharpClient.Client
 
             return builder.ToString();
         }
+
+        public IList<dynamic> Execute()
+        {
+            var uri = this.ToString();
+            return _executor(uri);
+        }
     }
 
     public class RestApiUriQueryBuilderTyped<T> : RestApiUriQueryBuilder
     {
-        public RestApiUriQueryBuilderTyped()
+        private Func<string, IList<T>> _executor = null;
+
+        public RestApiUriQueryBuilderTyped(Func<string, IList<T>> executor)
             : base(typeof(T).Name)
         {
+            if (executor == null)
+            {
+                throw new ArgumentNullException("executor");
+            }
+            _executor = executor;
         }
 
         public new RestApiUriQueryBuilderTyped<T> Id(object id)
@@ -164,7 +187,7 @@ namespace VersionOneRestSharpClient.Client
 
             return this;
         }
-        
+
         public new RestApiUriQueryBuilderTyped<T> Where(string attributeName, string matchValue)
         {
             return base.Where(GetMappedPathForAttribute(attributeName),
@@ -190,9 +213,9 @@ namespace VersionOneRestSharpClient.Client
                 op, filterValue) as RestApiUriQueryBuilderTyped<T>;
         }
 
-        public RestApiUriQueryBuilderTyped<T> Filter(string attributeName, ComparisonOperator op, object filterValue)
+        public new RestApiUriQueryBuilderTyped<T> Filter(string attributeName, ComparisonOperator op, object filterValue)
         {
-            return base.Filter(GetMappedPathForAttribute(attributeName), 
+            return base.Filter(GetMappedPathForAttribute(attributeName),
                 op, filterValue) as RestApiUriQueryBuilderTyped<T>;
         }
 
@@ -201,8 +224,22 @@ namespace VersionOneRestSharpClient.Client
             var name = (field.Body as MemberExpression ??
                         ((UnaryExpression)field.Body).Operand as MemberExpression).Member.Name;
 
-            return base.Filter(GetMappedPathForAttribute(name), 
+            return base.Filter(GetMappedPathForAttribute(name),
                 op, filterValue) as RestApiUriQueryBuilderTyped<T>;
+        }
+
+        public new RestApiUriQueryBuilderTyped<T> Paging(int pageSize, int pageStart = 0)
+        {
+            PageSize = pageSize;
+            PageStart = pageStart;
+
+            return this;
+        }
+
+        public new IList<T> Execute()
+        {
+            var uri = this.ToString();
+            return _executor(uri);
         }
     }
 }

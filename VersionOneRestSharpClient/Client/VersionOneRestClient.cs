@@ -2,6 +2,7 @@
 using RestSharp;
 using RestSharp.Validation;
 using RestSharp.Authenticators;
+using System.Collections.Generic;
 
 namespace VersionOneRestSharpClient.Client
 {
@@ -21,6 +22,7 @@ namespace VersionOneRestSharpClient.Client
             }
 
             Authenticator = new HttpBasicAuthenticator(userName, password);
+			ClearHandlers();
             AddHandler("text/xml", new AssetDeserializer());
         }
 
@@ -32,19 +34,50 @@ namespace VersionOneRestSharpClient.Client
             {
                 throw new ArgumentNullException("accessToken");
             }
-
             Authenticator = new AcccessTokenAuthenticator(accessToken);
+			ClearHandlers();
             AddHandler("text/xml", new AssetDeserializer());
         }
 
-		public IRestResponse Update(string oidToken, object attributes)
+        public IRestResponse<dynamic> Create(string assetType, object attributes)
+        {
+            var create = new RestApiCreatePayloadBuilder(assetType, attributes);
+            var payload = create.Build();
+            var req = new RestRequest(assetType, Method.POST);
+            req.AddParameter("application/json", payload, ParameterType.RequestBody);
+            return this.Post<dynamic>(req);
+        }
+
+		public IRestResponse<dynamic> Update(string oidToken, object attributes)
 		{
 			var update = new RestApiUpdatePayloadBuilder(oidToken, attributes);
 			var payload = update.Build();
 			var asset = oidToken.Replace(":", "/");
 			var req = new RestRequest(asset, Method.POST);
 			req.AddParameter("application/json", payload, ParameterType.RequestBody);
-			return this.Post(req);
+			return this.Post<dynamic>(req);
 		}
+
+		public RestApiUriQueryBuilder Query(string assetType)
+		{
+			Func<string, IList<dynamic>> execute = (string query) => {
+				var req = new RestRequest(query);
+				var response = this.Get<List<dynamic>>(req);
+				var results = response.Data as IList<dynamic>;
+				return results;
+			};
+			return new RestApiUriQueryBuilder(assetType, execute);
+		}
+
+        public RestApiUriQueryBuilderTyped<T> Query<T>() 
+        {
+            Func<string, IList<T>> execute = (string query) => {
+                var req = new RestRequest(query);
+                var response = this.Get<List<T>>(req);
+                var results = response.Data as IList<T>;
+                return results;
+            };
+            return new RestApiUriQueryBuilderTyped<T>(execute);
+        }
     }
 }
