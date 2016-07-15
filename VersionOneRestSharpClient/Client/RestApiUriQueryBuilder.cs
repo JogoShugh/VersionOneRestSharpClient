@@ -13,7 +13,7 @@ namespace VersionOneRestSharpClient.Client
         public int PageStart = -1;
         private readonly string _assetType = string.Empty;
         private string _id = string.Empty;
-        private Func<string, IList<dynamic>> _executor = null;
+        private Func<string, IList<Asset>> _executor = null;
 
         public RestApiUriQueryBuilder(string assetType)
         {
@@ -24,7 +24,7 @@ namespace VersionOneRestSharpClient.Client
             _assetType = assetType;
         }
 
-        public RestApiUriQueryBuilder(string assetType, Func<string, IList<dynamic>> executor) : this(assetType)
+        public RestApiUriQueryBuilder(string assetType, Func<string, IList<Asset>> executor) : this(assetType)
         {
             if (executor == null)
             {
@@ -59,9 +59,16 @@ namespace VersionOneRestSharpClient.Client
             WhereCriteria.Add(new WhereCriterion
             {
                 AttributeName = attributeName,
-                Operator = ComparisonOperator.IsEqual,
+                Operator = ComparisonOperator.Equals,
                 MatchValue = matchValue
             });
+
+            return this;
+        }
+
+        public RestApiUriQueryBuilder Where(params WhereCriterion[] criteria)
+        {
+            WhereCriteria.AddRange(criteria);
 
             return this;
         }
@@ -110,9 +117,16 @@ namespace VersionOneRestSharpClient.Client
 
                 foreach (var criterion in WhereCriteria)
                 {
-                    var encoded = criterion.AttributeName
-                                  + criterion.Operator.Token
-                                  + "'" + Uri.EscapeDataString(criterion.MatchValue.ToString()) + "'";
+                    string encoded = string.Empty;
+                    if (criterion.IsUnary)
+                    {
+                        encoded += criterion.Operator.Token + criterion.AttributeName;
+                    }
+                    else {
+                        encoded += criterion.AttributeName
+                                      + criterion.Operator.Token
+                                      + "'" + Uri.EscapeDataString(criterion.MatchValue.ToString()) + "'";
+                    }
                     encodedCriteria.Add(encoded);
                 }
 
@@ -149,10 +163,18 @@ namespace VersionOneRestSharpClient.Client
             return builder.ToString();
         }
 
-        public IList<dynamic> Execute()
+        public IList<Asset> Retrieve()
         {
             var uri = this.ToString();
             return _executor(uri);
+        }
+
+        public Asset RetrieveFirst()
+        {
+            var uri = this.ToString();
+            var results = _executor(uri);
+            if (results.Count > 0) return results[0];
+            return null;
         }
     }
 
@@ -236,7 +258,7 @@ namespace VersionOneRestSharpClient.Client
             return this;
         }
 
-        public new IList<T> Execute()
+        public new IList<T> Retrieve()
         {
             var uri = this.ToString();
             return _executor(uri);

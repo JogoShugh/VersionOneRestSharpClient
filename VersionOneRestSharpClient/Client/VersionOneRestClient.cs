@@ -39,33 +39,43 @@ namespace VersionOneRestSharpClient.Client
             AddHandler("text/xml", new AssetDeserializer());
         }
 
-        public IRestResponse<dynamic> Create(string assetType, object attributes)
+        //public IRestResponse<dynamic> Create(string assetType, object attributes)
+        public Asset Create(string assetType, object attributes)
         {
             var payload = RestApiPayloadBuilder.Build(attributes);
             var req = new RestRequest(assetType, Method.POST);
             req.AddParameter("application/json", payload, ParameterType.RequestBody);
-            return this.Post<dynamic>(req);
+            var res = this.Post<dynamic>(req);
+            return new Asset(res.Data[0]);
         }
 
-		public IRestResponse<dynamic> Update(string oidToken, object attributes)
-		{
+        //public IRestResponse<dynamic> Update(string oidToken, object attributes)
+        public Asset Update(string oidToken, object attributes)
+        {
 			var payload = RestApiPayloadBuilder.Build(attributes);
 			var asset = oidToken.Replace(":", "/");
 			var req = new RestRequest(asset, Method.POST);
 			req.AddParameter("application/json", payload, ParameterType.RequestBody);
-			return this.Post<dynamic>(req);
+			var res = this.Post<dynamic>(req);
+            return new Asset(res.Data[0]);
 		}
 
-		public RestApiUriQueryBuilder Query(string assetType)
-		{
-			Func<string, IList<dynamic>> execute = (string query) => {
-				var req = new RestRequest(query);
-				var response = this.Get<List<dynamic>>(req);
-				var results = response.Data as IList<dynamic>;
-				return results;
-			};
-			return new RestApiUriQueryBuilder(assetType, execute);
-		}
+        public RestApiUriQueryBuilder Query(string assetType)
+        {
+            Func<string, IList<Asset>> execute = (string query) => {
+                var req = new RestRequest(query);
+                var response = this.Get<List<dynamic>>(req);
+                var results = response.Data as IList<dynamic>;
+                var assets = new List<Asset>(results.Count);
+                foreach(dynamic item in results)
+                {
+                    assets.Add(new Asset(item));
+                }
+                return assets;
+            };
+            return new RestApiUriQueryBuilder(assetType, execute);
+        }
+
 
         public RestApiUriQueryBuilderTyped<T> Query<T>() 
         {

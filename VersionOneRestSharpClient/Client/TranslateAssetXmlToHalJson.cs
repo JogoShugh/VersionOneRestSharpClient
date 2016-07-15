@@ -25,7 +25,9 @@ namespace VersionOneRestSharpClient.Client
                     return assetList.ToObject<T>();
                 }
                 var rootObject = new JObject();
+                rootObject.AddingNew += PropertyContainer_AddingNew;
                 var relations = new JObject();
+                relations.AddingNew += PropertyContainer_AddingNew;
 
                 AddAttributes(nav, "//Attribute", rootObject);
                 AddIdentityRelation(nav, "//Asset", relations);
@@ -53,7 +55,10 @@ namespace VersionOneRestSharpClient.Client
             {
                 var assetNode = assetNodes.Current;
                 var asset = new JObject();
+                asset.AddingNew += PropertyContainer_AddingNew;
                 var assetRelations = new JObject();
+                assetRelations.AddingNew += PropertyContainer_AddingNew;
+
                 AddIdentityRelation(assetNode, ".", assetRelations);
                 AddAttributes(assetNode, "./Attribute", asset);
                 AddRelationships(assetNode, "./Relation", asset, assetRelations);
@@ -64,7 +69,7 @@ namespace VersionOneRestSharpClient.Client
         }
 
         private void AddAttributes(XPathNavigator nav, string selectPath, JObject propertyContainer)
-        {
+        {            
             var attributeNodes = nav.Select(selectPath);
             while (attributeNodes.MoveNext())
             {
@@ -101,6 +106,11 @@ namespace VersionOneRestSharpClient.Client
                     }
                 }
             }
+        }
+
+        private void PropertyContainer_AddingNew(object sender, System.ComponentModel.AddingNewEventArgs e)
+        {
+            var x = e.NewObject;
         }
 
         private static void AddIdentityRelation(XPathNavigator nav, string selectPath, JObject relations)

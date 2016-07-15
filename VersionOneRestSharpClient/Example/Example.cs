@@ -1,33 +1,84 @@
 ﻿using System;
 using System.Collections.Generic;
-using RestSharp;
 using VersionOneRestSharpClient.Client;
 using static System.Console;
-using static VersionOneRestSharpClient.Client.ComparisonOperator;
+using static VersionOneRestSharpClient.Client.ComparisonFunctions;
 using static VersionOneRestSharpClient.Client.ClientUtilities;
+using System.Diagnostics;
 
 namespace VersionOneRestSharpClient.Example
 {
+
     public class Example
     {
         //private const string V1_REST_API_URL = "http://localhost/VersionOne.Web/rest-1.v1/Data";
         private const string V1_REST_API_URL = "https://www14.v1host.com/v1sdktesting/rest-1.v1/Data";
+        //private const string V1_REST_API_URL = "https://www16.v1host.com/api-examples/rest-1.v1/Data";
         private const string USERNAME = "admin";
         private const string PASSWORD = "admin";
         private const string ACCESS_TOKEN = "1.EGwVOB/NsLKeTkRRJO+OpYhuFPo="; // for use with v1sdktesting site
 
         private static void Main(string[] args)
         {
+            // Customer code:
+            /*
+            "from: Defect select: \n" +
+            " - Name\n" +
+            " - Number\n" +
+            " - Description\n" +
+            " - Resolution\n" +
+            " - ResolutionReason.Name\n" +
+            " - from: Children:Task\n" +
+            " select:\n" +
+            " - Name\n" +
+            " - Description\n" +
+            " where:\n" +
+            " Name: Release Notes\n" +
+            "where:\n" +
+            " Scope.Name: " + v1ProjectName + "\n" +
+            " Timebox.Name: " + v1Sprint;
+            */
+            // WIP for query.v1
+            var v1ProjectName = "System (All Projects)";
+            var v1Sprint = "Iteration 1";
+            var query =
+                From("Defect")
+                .Select(
+                    "Name",
+                    "Number",
+                    "Description",
+                    "Resolution",
+                    "ResolutionReason.Name",
+                    From("Children:Task")
+                        .Select(
+                            "Name",
+                            "Description"
+                        )
+                        .Where(
+                            Equal("Name", "Release Notes")
+                        )
+                )
+                .Where(
+                    Equal("Scope.Name", v1ProjectName),
+                    Equal("Timebox.Name", v1Sprint)
+                );
+
+            var payload = query.ToString();
+            Debug.Print(payload);
+
             // Create the rest client instance, which is a simple derived version of the RestSharp client:
             var client = new VersionOneRestClient(V1_REST_API_URL, USERNAME, PASSWORD);
 
-            Create(client);
-            QueryWithSimpleWhere(client);
-            QueryWithNotEqualsStringFormFilter(client);
-            QueryWithIsEqualOperatorConvenienceHelper(client);
-            QueryWithStronglyTypedQueryBuilderForScopeWithStringBasedFilter(client);
-            QueryWithStronglyTypedQueryBuilderForMemberWithLambdaBasedFilter(client);
-            Update(client);
+            //Create(client);
+            CreateWithChildren();
+            //QueryWithExists(client);
+            //QueryWithNotExists(client);
+            //QueryWithSimpleWhere(client);
+            //QueryWithNotEqualsStringFormFilter(client);
+            //QueryWithIsEqualOperatorConvenienceHelper(client);
+            //QueryWithStronglyTypedQueryBuilderForScopeWithStringBasedFilter(client);
+            //QueryWithStronglyTypedQueryBuilderForMemberWithLambdaBasedFilter(client);
+            //Update(client);
             // TODO: Delete
             // TODO: other Operations...
 
@@ -56,56 +107,144 @@ namespace VersionOneRestSharpClient.Example
         {
             WriteIntro("Create:");
 
-            var res = client.Create("Story", new
+            var scope = "Scope:86271";
+
+            dynamic asset = client.Create("Story", new
             {
                 Name = "Testing the client.Create method at " + DateTime.Now.ToLongTimeString(),
                 Description = "Just playing around...",
-                Scope = "Scope:86271",
-                //Owners = Relations(Add("Member:86309"), Remove("Member:20"))
-                //Owners = Relations(Add("Member", 86309), Remove("Member", 20))
-                // Other options:
-                // Owners = Add("Member:20")
-                // Owners = Relation("Member:20")
-                // Owners = Relation(Add("Member:20"))
-                Owners = Add("Member", 86309)
-                // Owners = Remove("Member", 86309)
-                // Or, the old school by hand way:
-                /*
-                Owners = new[]
-                {
-                    new { idref = "Member:20", act = "add" },
-                    new { idref = "Member:86309", act = "add" }
-                }
-                */
+                Scope = scope,
+                Owners = Relation("Member:20")
             });
 
-            var oidToken = res.Data[0]._links.self.oidToken.ToString();
+            var oidToken = asset.OidToken;
 
-            res = client.Create("Task", new
+            asset = client.Create("Issue", new
             {
-                Name = "My Task 1",
-                Parent = oidToken
+                Name = "My Issue",
+                Scope = scope,
+                PrimaryWorkitems = Relation(oidToken)
             });
-            WriteLine(res.Data[0]._links.self.oidToken);
+            var tok1 = asset.OidToken;
+            WriteLine(tok1);
 
-            res = client.Create("Task", new
+            asset = client.Create("Issue", new
             {
-                Name = "My Task 2",
-                Parent = oidToken
+                Name = "My Issue 2",
+                Scope = scope,
+                PrimaryWorkitems = Relation(oidToken)
             });
-            WriteLine(res.Data[0]._links.self.oidToken);
+            var tok2 = asset.OidToken;
+            WriteLine(tok2);
 
-            var results = client.Query("Story")
-                .Select("Children:Task")
+            asset = client.Query("Story")
+                .Select("Name", "Issues", "Description")
                 .Where("ID", oidToken)
-                .Execute();
-            WriteLine(results);
+                .RetrieveFirst();
 
-            // Remove
-            res = client.Update(oidToken, new
+            WriteLine(asset);
+
+            var storyTasks = asset._links["Issues"];
+
+            WriteLine(storyTasks);
+
+            //results[0].RemoveRelatedAssets("Issues", "Issue:1", "Issue:2");
+            //results[0].RemoveRelatedAssets("Issues", new string[] { tok1.ToString(), tok2.ToString() });
+            //results[0].RemoveRelatedAssets("Issues", new [] { tok1, tok2 });
+            asset.RemoveRelatedAssets("Issues", tok1, tok2);
+
+            storyTasks = asset._links["Issues"];
+            WriteLine(storyTasks);
+
+            asset.AddRelatedAssets("Issues", tok1);
+
+            storyTasks = asset._links["Issues"];
+            WriteLine(storyTasks);
+
+            asset.Name = "Newbie name";
+            //results[0].NewProp = "New Prop";
+            asset.Description = "Just playing around...";            
+
+            var changes = asset.GetChangesDto();
+
+            var payload = RestApiPayloadBuilder.Build(changes);
+
+            asset = client.Update(oidToken, new
             {
                 Owners = Remove("Member:20")
             });
+        }
+
+        private static void CreateWithChildren()
+        {
+            dynamic scope = Asset("Scope");
+            scope.Name = "My Project";
+            scope.Owner = "Member:20";
+            scope.Parent = "Scope:0";
+            scope.BeginDate = DateTime.Now;
+
+            for (var i = 0; i < 5; i++)
+            {
+                dynamic story = Asset("Story");
+                story.Name = $"Story {i}";
+                story.Description = $"Description {i}";
+                for (var j = 0; j < 3; j++)
+                {
+                    story.CreateRelatedAsset("Children", Asset("Task", new {
+                        Name = $"Task {i}{j}",
+                        Description = $"Description for Task {i}{j}"
+                    }));
+                    story.CreateRelatedAsset("Children", Asset("Test", new {
+                        Name = $"Test {i}{j}",
+                        Description = $"Description for Test {i}{j}"
+                    }));
+                }
+                scope.CreateRelatedAsset("Workitems", story);
+            }
+
+            string yam = scope.GetYamlPayload();            
+        }
+
+        private static void QueryWithExists(VersionOneRestClient client)
+        {
+            WriteIntro("QueryWithExists:");
+
+            var results = client.Query("Scope")
+                .Select("Parent")
+                .Where(
+                    Exists("Parent")
+                )
+                .Paging(10)
+                .Retrieve();
+
+            WriteLine(results.ToString());
+
+            foreach (var result in results)
+            {
+                WriteRawJson(result);
+            }
+        }
+
+        private static void QueryWithNotExists(VersionOneRestClient client)
+        {
+            WriteIntro("QueryWithNotExists:");
+
+            var results = client.Query("Scope")
+                .Select("Parent", "Children")
+                .Where(
+                    NotExists("Parent")
+                )
+                .Paging(10)
+                .Retrieve();
+
+            WriteLine(results.ToString());
+
+            foreach (dynamic result in results)
+            {
+                WriteRawJson(result);
+
+                result.Workitems.RemoveValue("Story:123");
+            }
         }
 
         private static void QueryWithSimpleWhere(VersionOneRestClient client)
@@ -116,17 +255,18 @@ namespace VersionOneRestSharpClient.Example
                 //.Select("Name", "Nickname", "OwnedWorkitems.Name")
                 .Where("Name", "Sample: Alfred Smith") // <-- Simple match
                 .Paging(10)
-                .Execute();
+                .Retrieve();
 
             WriteLine(results.ToString());
 
-            foreach (var result in results)
+            foreach (dynamic result in results)
             {
                 WriteRawJson(result);
 
                 WriteLine("Name:" + result.Name);
                 WriteLine("Name:" + result.Nickname);
 
+                result.Parent = "Epic:5555";
                 if (result["OwnedWorkitems.Name"].HasValues == false) continue;
 
                 WriteLine("Workitems: " + result["OwnedWorkitems.Name"]);
@@ -146,7 +286,7 @@ namespace VersionOneRestSharpClient.Example
                 .Select("Name", "Description", "Workitems.Name")
                 .Filter("SecurityScope.Name", "!=", "System (All Projects)") // excludes top level one
                 .Paging(5, 2)
-                .Execute();
+                .Retrieve();
             foreach (var result in results)
             {
                 WriteRawJson(result);
@@ -160,11 +300,11 @@ namespace VersionOneRestSharpClient.Example
 
             var results = client.Query("Defect")
                 .Select("Name", "Description", "Children")
-                .Filter("ID", IsEqual, "Defect:64939")
+                .Filter("ID", ComparisonOperator.Equals, "Defect:64939")
                 .Paging(10)
-                .Execute();
+                .Retrieve();
 
-            foreach (var result in results)
+            foreach (dynamic result in results)
             {
                 WriteRawJson(result);
 
@@ -187,9 +327,9 @@ namespace VersionOneRestSharpClient.Example
 
             var results = client.Query<Scope>()
                 .Select(s => s.Name, s => s.Description, s => s.Workitems)
-                .Filter("SecurityScope.Name", NotEqual, "System (All Projects)")
+                .Filter("SecurityScope.Name", ComparisonOperator.NotEquals, "System (All Projects)")
                 .Paging(1)
-                .Execute();
+                .Retrieve();
 
             foreach (Scope result in results)
             {
@@ -210,9 +350,9 @@ namespace VersionOneRestSharpClient.Example
 
             var results = client.Query<Member>()
                 .Select(m => m.Name, m => m.Nickname, m => m.Workitems)
-                .Filter(m => m.Name, NotEqual, "Administrator")
+                .Filter(m => m.Name, ComparisonOperator.NotEquals, "Administrator")
                 .Paging(1)
-                .Execute();
+                .Retrieve();
 
             foreach (Member result in results)
             {
@@ -266,3 +406,28 @@ namespace VersionOneRestSharpClient.Example
         }
     }
 }
+
+// ALTERNATIVE APPROACHES
+
+//dynamic asset = client.Create("Story", new
+//{
+//    Name = "Testing the client.Create method at " + DateTime.Now.ToLongTimeString(),
+//    Description = "Just playing around...",
+//    Scope = scope,
+//    //Owners = Relations(Add("Member:86309"), Remove("Member:20"))
+//    //Owners = Relations(Add("Member", 86309), Remove("Member", 20))
+//    // Other options:
+//    // Owners = Add("Member:20")
+//    // Owners = Relation("Member:20")
+//    // Owners = Relation(Add("Member:20"))
+//    Owners = Relation("Member:20") // Add("Member", 86309)
+//                                   // Owners = Remove("Member", 86309)
+//                                   // Or, the old school by hand way:
+//                                   /*
+//                                   Owners = new[]
+//                                   {
+//                                       new { idref = "Member:20", act = "add" },
+//                                       new { idref = "Member:86309", act = "add" }
+//                                   }
+//                                   */
+//});

@@ -14,10 +14,10 @@ namespace VersionOneRestSharpClient.Client
             Token = token;
         }
 
-        public static readonly ComparisonOperator IsEqual =
+        public static new readonly ComparisonOperator Equals =
             new ComparisonOperator(ComparisonOperatorConstants.Equals,
                                    ComparisonOperatorConstants.EqualsToken);
-        public static readonly ComparisonOperator NotEqual =
+        public static readonly ComparisonOperator NotEquals =
             new ComparisonOperator(ComparisonOperatorConstants.NotEquals,
                                    ComparisonOperatorConstants.NotEqualsToken);
         public static readonly ComparisonOperator LessThan =
@@ -32,14 +32,20 @@ namespace VersionOneRestSharpClient.Client
         public static readonly ComparisonOperator GreaterThanOrEqual =
             new ComparisonOperator(ComparisonOperatorConstants.GreaterThanOrEqual,
                                    ComparisonOperatorConstants.GreaterThanOrEqualToken);
+        public static readonly ComparisonOperator Exists =
+            new ComparisonOperator(ComparisonOperatorConstants.Exists,
+                                   ComparisonOperatorConstants.ExistsToken);
+        public static readonly ComparisonOperator NotExists =
+            new ComparisonOperator(ComparisonOperatorConstants.NotExists,
+                                   ComparisonOperatorConstants.NotExistsToken);
 
         private static Dictionary<string, ComparisonOperator> _operatorsMap =
             new Dictionary<string, ComparisonOperator>()
                 {
-                    {ComparisonOperatorConstants.Equals, IsEqual},
-                    {ComparisonOperatorConstants.EqualsToken, IsEqual},
-                    {ComparisonOperatorConstants.NotEquals, NotEqual},
-                    {ComparisonOperatorConstants.NotEqualsToken, NotEqual},
+                    {ComparisonOperatorConstants.Equals, Equals},
+                    {ComparisonOperatorConstants.EqualsToken, Equals},
+                    {ComparisonOperatorConstants.NotEquals, NotEquals},
+                    {ComparisonOperatorConstants.NotEqualsToken, NotEquals},
                     {ComparisonOperatorConstants.LessThan, LessThan},
                     {ComparisonOperatorConstants.LessThanToken, LessThan},
                     {ComparisonOperatorConstants.LessThanOrEqual, LessThanOrEqual},
@@ -47,7 +53,11 @@ namespace VersionOneRestSharpClient.Client
                     {ComparisonOperatorConstants.GreaterThan, GreaterThan},
                     {ComparisonOperatorConstants.GreaterThanToken, GreaterThan},
                     {ComparisonOperatorConstants.GreaterThanOrEqual, GreaterThanOrEqual},
-                    {ComparisonOperatorConstants.GreaterThanOrEqualToken, GreaterThanOrEqual}
+                    {ComparisonOperatorConstants.GreaterThanOrEqualToken, GreaterThanOrEqual},
+                    {ComparisonOperatorConstants.Exists, Exists},
+                    {ComparisonOperatorConstants.ExistsToken, Exists},
+                    {ComparisonOperatorConstants.NotExists, NotExists},
+                    {ComparisonOperatorConstants.NotExistsToken, NotExists},
                 };
 
         public static ComparisonOperator GetOperator(string op)
