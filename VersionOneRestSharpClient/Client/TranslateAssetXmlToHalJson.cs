@@ -117,6 +117,7 @@ namespace VersionOneRestSharpClient.Client
         {
             // Add the identity relation
             var assetNode = nav.SelectSingleNode(selectPath);
+			if (assetNode == null) return;
             var href = assetNode.GetAttribute("href", string.Empty);
             var oidTokenFull = assetNode.GetAttribute("id", string.Empty);
 
