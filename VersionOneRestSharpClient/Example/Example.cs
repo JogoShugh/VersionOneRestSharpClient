@@ -20,7 +20,7 @@ namespace VersionOneRestSharpClient.Example
 
 		private static void Main(string[] args)
 		{
-			// Customer code:
+			// Customer code (Java!):
 			/*
             "from: Defect select: \n" +
             " - Name\n" +
@@ -43,6 +43,10 @@ namespace VersionOneRestSharpClient.Example
 			var v1Sprint = "Iteration 1";
 			var query =
 				From("Defect")
+				.Where(
+					Equal("Scope.Name", v1ProjectName),
+					Equal("Timebox.Name", v1Sprint)
+				)
 				.Select(
 					"Name",
 					"Number",
@@ -50,17 +54,13 @@ namespace VersionOneRestSharpClient.Example
 					"Resolution",
 					"ResolutionReason.Name",
 					From("Children:Task")
+						.Where(
+							Equal("Name", "Release Notes")
+						)
 						.Select(
 							"Name",
 							"Description"
 						)
-						.Where(
-							Equal("Name", "Release Notes")
-						)
-				)
-				.Where(
-					Equal("Scope.Name", v1ProjectName),
-					Equal("Timebox.Name", v1Sprint)
 				);
 
 			var payload = query.ToString();
