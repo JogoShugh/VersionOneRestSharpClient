@@ -430,7 +430,7 @@ namespace VersionOneRestSharpClient.Example
 				Debug.WriteLine($"============#: {++x}");
 				Debug.WriteLine($"         Oid : {feature.OidToken}");
 
-				foreach(var attr in feature)
+				foreach (var attr in feature)
 				{
 					if (attr.Type == Newtonsoft.Json.Linq.JTokenType.String)
 					{
@@ -442,8 +442,25 @@ namespace VersionOneRestSharpClient.Example
 					{
 						Debug.WriteLine($"--{attr.Name} : {attr}");
 					}
-
 				}
+
+				// Array of names approach:
+				//var attrNames = new[] { "Scope", "Scope.Name", "Name", "ID", "Description", "Status", "Priority", "Source" };
+				//foreach(var attrName in attrNames)
+				//{
+				//	var attr = feature[attrName] as Newtonsoft.Json.Linq.JToken;
+				//	if (attr == null) continue;
+				//	if (attr.Type == Newtonsoft.Json.Linq.JTokenType.String)
+				//	{
+				//		var value = attr.ToString();
+				//		if (value != null && value.Length > 80) value = value.Substring(1, 80) + ".....";
+				//		Debug.WriteLine($"--{attrName} : {value}");
+				//	}
+				//	else
+				//	{
+				//		Debug.WriteLine($"--{attrName} : {attr}");
+				//	}
+				//}
 			}
 
 			var scopeResult = client.Query("Scope")
