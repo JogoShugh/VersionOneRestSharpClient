@@ -70,6 +70,7 @@ namespace VersionOneRestSharpClient.Example
 			var client = new VersionOneRestClient(V1_REST_API_URL, USERNAME, PASSWORD);
 
 			QueryForScopes();
+			//QueryForPraveen();
 			//CreateLinkOnStory();
 			//Create(client);
 			//CreateWithChildren();
@@ -480,6 +481,54 @@ namespace VersionOneRestSharpClient.Example
 				Debug.WriteLine($"--Schedule Name : {scope["Schedule.Name"]}"); // Using [] syntax to dot-notation into child attributes
 				Debug.WriteLine($"--Schedule: {scope.Schedule}"); // Broken at the moment
 				Debug.WriteLine($"--Owner      : {scope.Owner}");
+			}
+		}
+
+		/// <summary>
+		/// See ticket for original code: https://versiononesupport.zendesk.com/agent/tickets/27711
+		/// </summary>
+		public static void QueryForPraveen()
+		{
+			var client = new VersionOneRestClient(V1_REST_API_URL, USERNAME, PASSWORD);
+
+			var results = client.Query("Story")
+				.Select("Name", "Status.Name", "AssetState", "IsDeleted")
+				.Where(
+					Or(
+						Equal("Name", "Story 1"),
+						NotEqual("AssetState", 64)
+					)
+				)
+				.Retrieve();
+
+			/** Alternative syntax ideas:
+			
+			// Using chained Or after an operator:
+			var results = client.Query("Story")
+				.Select("Name", "Status.Name", "AssetState", "IsDeleted")
+				.Where(
+					Equal("Name", "Story 1").Or(NotEqual("AssetState", 64))
+				)
+				.Retrieve();
+
+			// Using extension methods:
+			var results = client.Query("Story")
+				.Select("Name", "Status.Name", "AssetState", "IsDeleted")
+				.Where(
+					"Name".Equal("Story 1")
+					.Or(
+					"AssetState".Equal(64)
+					)
+				)
+				.Retrieve();
+			**/
+
+			foreach (dynamic story in results)
+			{
+				// Debug.WriteLine($"Story OID Token: {story.OidToken}"); // TODO: fix this part
+				Debug.WriteLine($"Name: {story.Name}");
+				Debug.WriteLine($"Status: {story["Status.Name"]}");
+				Debug.WriteLine($"AssetState: {story.AssetState}");
 			}
 		}
 	}
